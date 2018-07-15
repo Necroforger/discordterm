@@ -60,6 +60,25 @@ func MaxInt(a, b int) int {
 	return b
 }
 
+func cutString(a string, maxlen int) string {
+	if len(a) > maxlen {
+		return a[:maxlen] + "~"
+	}
+	return a
+}
+
+func createPrompt(dt *discordterm.Client) string {
+	var channel string
+	if c, err := dt.Cli.State.Channel(dt.ActiveChannel()); err == nil {
+		channel = c.Name
+	}
+	if dt.Conf.ColorText {
+		channel = Red(channel).String()
+	}
+
+	return fmt.Sprintf("#%s>", cutString(channel, 30))
+}
+
 const helpMessage = `====| Commands: |==============================================
 /say        say something in the currently active channel
 /gl         lists all the available guilds
@@ -218,6 +237,8 @@ func readInputLoop(dt *discordterm.Client) {
 	for {
 		var line string
 		var err error
+
+		l.SetPrompt(createPrompt(dt))
 
 		if !standardReader {
 			line, err = l.Readline()
