@@ -5,6 +5,9 @@ A quick terminal client for discord I wrote on a raspberry pi when my computer w
 ## Installing
 `go get -u github.com/Necroforger/discordterm/cmd/discordterm`
 
+## Shortcuts
+[Here are the text shortcuts available](https://github.com/chzyer/readline/blob/master/doc/shortcut.md)
+
 ## Flags
 
 | Flag           | Description                                                                                 |
