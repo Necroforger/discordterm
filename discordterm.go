@@ -1,6 +1,7 @@
 package discordterm
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"image"
@@ -119,11 +120,12 @@ func (c *Client) PrintImageComplex(img image.Image, conf *Config) error {
 		opts.ColorMode = textify.ColorTerminal
 	}
 
-	err := textify.NewEncoder(os.Stdout).Encode(img, opts)
+	out := bufio.NewWriterSize(os.Stdout, 1024*1024*5)
+	err := textify.NewEncoder(out).Encode(img, opts)
 	if err != nil {
 		return err
 	}
-
+	out.Flush()
 	return nil
 }
 
