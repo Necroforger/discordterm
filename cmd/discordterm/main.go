@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"unicode/utf8"
 
 	"github.com/chzyer/readline"
@@ -1079,10 +1077,6 @@ func main() {
 
 	// Read input and execute commands
 	readInputLoop(dt)
-
-	var c = make(chan os.Signal)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL, os.Kill)
-	<-c
 
 	// Remove temp history file
 	os.Remove(filepath.Join(os.TempDir(), historyFile))
