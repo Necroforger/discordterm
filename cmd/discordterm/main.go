@@ -200,20 +200,39 @@ var completer *readline.PrefixCompleter
 
 // readInputLoop waits for text and executes
 func readInputLoop(dt *discordterm.Client) {
+	rd := bufio.NewReader(os.Stdin)
+
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:            prompt,
 		AutoComplete:      completer,
 		HistoryFile:       filepath.Join(os.TempDir(), historyFile),
 		HistorySearchFold: true,
 	})
-	Must(err)
+	if err != nil {
+		log.Println("Error creating readline:", err)
+		return
+	}
+
+	var standardReader bool
 
 	for {
-		// Read a line of input
-		line, err := l.Readline()
-		if err != nil {
-			log.Fatal(err)
+		var line string
+		var err error
+
+		if !standardReader {
+			line, err = l.Readline()
+			if err != nil {
+				standardReader = true
+				log.Println("Error using readline package: switching to bufio reader: ", err)
+			}
+		} else {
+			line, err = rd.ReadString('\n')
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+
+		// Read a line of input
 
 		// Remove whitespace characters from line
 		line = strings.TrimSpace(line)
@@ -1058,7 +1077,7 @@ func main() {
 	fmt.Println("Select a guild and channel")
 
 	// Read input and execute commands
-	go readInputLoop(dt)
+	readInputLoop(dt)
 
 	var c = make(chan os.Signal)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL, os.Kill)
