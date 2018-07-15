@@ -226,6 +226,7 @@ func readInputLoop(dt *discordterm.Client) {
 				log.Println("Error using readline package: switching to bufio reader: ", err)
 			}
 		} else {
+			fmt.Print(prompt)
 			line, err = rd.ReadString('\n')
 			if err != nil {
 				log.Fatal(err)
