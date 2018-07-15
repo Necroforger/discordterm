@@ -1097,6 +1097,9 @@ func initCompletion(dt *discordterm.Client) {
 								return completion
 							}
 							for _, v := range guild.Channels {
+								if v.Type != discordgo.ChannelTypeGuildText {
+									continue
+								}
 								completion = append(completion, v.Name)
 							}
 							return completion
