@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"unicode/utf8"
+
+	"github.com/chzyer/readline"
 
 	"github.com/Necroforger/discordterm"
 	"github.com/alecthomas/kingpin"
@@ -32,6 +37,11 @@ var (
 	imageWidth    = app.Flag("img-width", "Sets the default width of images").Default("100").Uint()
 	colorImages   = app.Flag("color-images", "If enabled, images will have color").Bool()
 	colorText     = app.Flag("color-text", "If enabled, Text will be colored").Short('c').Default("true").Bool()
+)
+
+const (
+	prompt      = "Discord>"
+	historyFile = "discordterm.history"
 )
 
 // MinInt returns the minimum of two integers
@@ -145,12 +155,62 @@ func formatBoolOnOff(b bool) string {
 	return "off"
 }
 
+var commandList = []string{
+	"say",
+	"gl",
+	"cl",
+	"leave",
+	"g",
+	"gr",
+	"c",
+	"cr",
+	"m",
+	"p",
+	"roles",
+	"upload",
+	"img-auto",
+	"text-color",
+	"img",
+	"img-width",
+	"img-color",
+	"avatar",
+	"members",
+	"presences",
+	"member-info",
+	"show-nicknames",
+	"username",
+	"status",
+	"playing",
+	"playing-off",
+	"streaming",
+	"member-add-role",
+	"member-remove-role",
+	"member-nick",
+	"nick",
+	"delete",
+	"edit",
+	"ls",
+	"cd",
+	"help",
+	"exit",
+}
+
+// Prefix completer
+var completer *readline.PrefixCompleter
+
 // readInputLoop waits for text and executes
 func readInputLoop(dt *discordterm.Client) {
-	rd := bufio.NewReader(os.Stdin)
+	l, err := readline.NewEx(&readline.Config{
+		Prompt:            prompt,
+		AutoComplete:      completer,
+		HistoryFile:       filepath.Join(os.TempDir(), historyFile),
+		HistorySearchFold: true,
+	})
+	Must(err)
+
 	for {
 		// Read a line of input
-		line, err := rd.ReadString('\n')
+		line, err := l.Readline()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -396,12 +456,12 @@ func executeCommand(dt *discordterm.Client, line string) error {
 		}
 
 		// Get file stats for name
-		finfo, err := os.Stat(args.Get(1))
+		finfo, err := os.Stat(args.After(1))
 		if err != nil {
 			return err
 		}
 
-		f, err := os.Open(args.Get(1))
+		f, err := os.Open(args.After(1))
 		if err != nil {
 			return err
 		}
@@ -954,6 +1014,13 @@ func main() {
 		GetLoginInfoFromInput()
 	}
 
+	// Initialize prefix completer
+	completers := []readline.PrefixCompleterInterface{}
+	for _, v := range commandList {
+		completers = append(completers, readline.PcItem(v))
+	}
+	completer = readline.NewPrefixCompleter(completers...)
+
 	session, err := discordgo.New(*username, *password, *token)
 	if err != nil {
 		log.Fatal(err)
@@ -993,7 +1060,12 @@ func main() {
 	// Read input and execute commands
 	go readInputLoop(dt)
 
-	<-make(chan struct{})
+	var c = make(chan os.Signal)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL, os.Kill)
+	<-c
+
+	// Remove temp history file
+	os.Remove(filepath.Join(os.TempDir(), historyFile))
 }
 
 //***********+:  -*#**********************************#+===*******************************************
