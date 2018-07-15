@@ -1045,6 +1045,51 @@ func GetLoginInfoFromInput() {
 	}
 }
 
+func initCompletion(dt *discordterm.Client) {
+	// Initialize prefix completer
+	completers := []readline.PrefixCompleterInterface{}
+	for _, v := range commandList {
+		if v == "gr" { // Guild name completion
+			completers = append(
+				completers,
+				readline.PcItem(
+					"gr",
+					readline.PcItemDynamic(func(input string) []string {
+						completion := []string{}
+						for _, v := range dt.Cli.State.Guilds {
+							completion = append(completion, v.Name)
+						}
+						return completion
+					}),
+				),
+			)
+		} else if v == "cr" { // Channel name completion
+			completers = append(
+				completers,
+				readline.PcItem(
+					"cr",
+					readline.PcItemDynamic(
+						func(input string) []string {
+							completion := []string{}
+							guild, err := dt.Cli.State.Guild(dt.ActiveGuild())
+							if err != nil {
+								return completion
+							}
+							for _, v := range guild.Channels {
+								completion = append(completion, v.Name)
+							}
+							return completion
+						},
+					),
+				),
+			)
+		} else {
+			completers = append(completers, readline.PcItem(v))
+		}
+	}
+	completer = readline.NewPrefixCompleter(completers...)
+}
+
 func main() {
 	app.Parse(os.Args[1:])
 
@@ -1060,13 +1105,6 @@ func main() {
 	if *username == "" && *password == "" && *token == "" {
 		GetLoginInfoFromInput()
 	}
-
-	// Initialize prefix completer
-	completers := []readline.PrefixCompleterInterface{}
-	for _, v := range commandList {
-		completers = append(completers, readline.PcItem(v))
-	}
-	completer = readline.NewPrefixCompleter(completers...)
 
 	session, err := discordgo.New(*username, *password, *token)
 	if err != nil {
@@ -1091,6 +1129,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	initCompletion(dt)
 	fmt.Println(helpMessage)
 
 	// Wait for ready event to send guild and User info
