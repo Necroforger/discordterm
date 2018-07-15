@@ -3,15 +3,16 @@ package discordterm
 import (
 	"errors"
 	"fmt"
-	"github.com/Necroforger/textify"
-	"github.com/bwmarrin/discordgo"
-	. "github.com/logrusorgru/aurora"
 	"image"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/Necroforger/textify"
+	"github.com/bwmarrin/discordgo"
+	. "github.com/logrusorgru/aurora"
 )
 
 // MinInt returns the minimum of two integers
@@ -261,6 +262,7 @@ func (c *Client) PrintAttachments(attachments []*discordgo.MessageAttachment, co
 	}
 }
 
+// PrintMessageComplex ...
 func (c *Client) PrintMessageComplex(m *discordgo.Message, conf *Config) {
 	if conf == nil {
 		conf = NewConfig()
