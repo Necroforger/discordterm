@@ -19,6 +19,9 @@ A quick terminal client for discord I wrote on a raspberry pi when my computer w
 | color-text     | if enabled, text will be colored                                                            |
 
 ## Help
+
+When using commands, exclude the `/` prefix
+
 ```
 ====| Commands: |==============================================
 /say        say something in the currently active channel
