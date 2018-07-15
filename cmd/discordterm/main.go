@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"log"
@@ -262,6 +264,17 @@ func (a Args) After(n int) string {
 	return ""
 }
 
+func parseArgsCsv(line string) ([]string, error) {
+	rd := csv.NewReader(bytes.NewBufferString(line))
+	rd.Comma = ' '
+	records, err := rd.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
+
 // execCmd executes a command
 func executeCommand(dt *discordterm.Client, line string) error {
 	// if strings.HasPrefix(line, "") {
@@ -271,8 +284,13 @@ func executeCommand(dt *discordterm.Client, line string) error {
 		line = line[1:]
 	}
 
-	// Parse arguments by spaces
-	args := Args(strings.Split(line, " "))
+	// Parse arguments
+	var args Args
+	if a, err := parseArgsCsv(line); err == nil {
+		args = Args(a)
+	} else {
+		return nil
+	}
 
 	switch args[0] {
 	// Guild list
@@ -916,11 +934,22 @@ func executeCommand(dt *discordterm.Client, line string) error {
 
 	// Update your playing status
 	case "playing":
-		err := dt.Cli.UpdateStatus(0, args.Get(1))
+		err := dt.Cli.UpdateStatusComplex(discordgo.UpdateStatusData{
+			Game: &discordgo.Game{
+				Name: args.After(1),
+			},
+		})
 		if err != nil {
 			return err
 		}
-		fmt.Println("Playing status set to: ", args.Get(1))
+		fmt.Println("Playing status set to: ", args.After(1))
+
+	case "streaming":
+		err := dt.Cli.UpdateStreamingStatus(0, args.Get(1), args.Get(2))
+		if err != nil {
+			return err
+		}
+		fmt.Println("streaming status set to ", args.Get(1), " : ", args.Get(2))
 
 	case "playing-off":
 		err := dt.Cli.UpdateStatus(1, "")
